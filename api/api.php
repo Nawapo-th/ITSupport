@@ -429,6 +429,8 @@ try {
                     'model' => $job['model'],
                     'reporter' => $job['reporter_name'],
                     'division' => $job['division'],
+                    'floor' => $job['floor'],
+                    'contact' => $job['contact'],
                     'technician' => $job['technician'] ?? '-',
                     'issue' => $job['issue'],
                     'status' => $job['status']

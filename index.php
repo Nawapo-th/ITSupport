@@ -17,45 +17,45 @@
   <div class="w-full md:max-w-7xl mx-auto bg-white md:rounded-3xl shadow-xl overflow-hidden transition-all duration-300 border border-orange-100 mt-0 md:mt-8 relative z-10 min-h-[calc(100vh-4rem)] flex flex-col">
     
     <!-- Header (Fixed Structure) -->
-    <div class="bg-gradient-to-r from-orange-400 to-amber-300 p-5 text-white flex justify-between items-center shadow-md">
-      <div id="mainHeaderLogo" class="flex items-center gap-3 text-white drop-shadow-sm transition" onclick="goHome()">
-        <div class="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+    <div class="bg-gradient-to-r from-orange-400 to-amber-300 p-3 md:p-5 text-white flex justify-between items-center shadow-md">
+      <div id="mainHeaderLogo" class="flex items-center gap-2 md:gap-3 text-white drop-shadow-sm transition" onclick="goHome()">
+        <div class="bg-white/20 p-1.5 md:p-2 rounded-lg backdrop-blur-sm">
+          <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
         </div>
         <div class="flex flex-col">
-          <span class="text-xl font-bold leading-tight">ระบบแจ้งซ่อมIT</span>
+          <span class="text-base md:text-xl font-bold leading-tight">ระบบแจ้งซ่อมIT</span>
           <!-- Status Badge added here -->
-          <span id="userStatusBadge" class="text-[10px] font-medium bg-white/20 px-2 py-0.5 rounded-full w-fit hidden">สถานะ: -</span>
+          <span id="userStatusBadge" class="text-[9px] md:text-[10px] font-medium bg-white/20 px-2 py-0.5 rounded-full w-fit hidden mt-0.5">สถานะ: -</span>
         </div>
       </div>
       
       <!-- Nav Menu -->
       <div id="navMenu" class="hidden flex gap-2 items-center">
-        <button onclick="showPage('repairSection')" class="text-sm bg-orange-500/80 hover:bg-orange-600 text-white font-medium px-3 py-1.5 rounded-lg transition shadow-sm border border-white/10 flex items-center gap-1">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-          <span>แจ้งซ่อม</span>
+        <button onclick="showPage('repairSection')" class="text-sm bg-orange-500/80 hover:bg-orange-600 text-white font-medium w-10 h-10 md:w-auto md:h-auto md:px-3 md:py-1.5 rounded-lg transition shadow-sm border border-white/10 flex items-center justify-center md:gap-1">
+          <svg class="w-5 h-5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+          <span class="hidden md:inline">แจ้งซ่อม</span>
         </button>
-        <button id="userMyJobsBtn" onclick="loadUserJobs()" class="hidden text-sm bg-cyan-500/80 hover:bg-cyan-600 text-white font-medium px-3 py-1.5 rounded-lg transition shadow-sm border border-white/10 flex items-center gap-1">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+        <button id="userMyJobsBtn" onclick="loadUserJobs()" class="hidden text-sm bg-cyan-500/80 hover:bg-cyan-600 text-white font-medium w-10 h-10 md:w-auto md:h-auto md:px-3 md:py-1.5 rounded-lg transition shadow-sm border border-white/10 flex items-center justify-center md:gap-1">
+          <svg class="w-5 h-5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
           <span class="hidden md:inline">ดูสถานะงาน</span>
         </button>
-        <button id="adminStatsBtn" onclick="loadDashboard()" class="hidden text-sm bg-indigo-500/80 hover:bg-indigo-600 text-white font-medium px-3 py-1.5 rounded-lg transition shadow-sm border border-white/10 flex items-center gap-1">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+        <button id="adminStatsBtn" onclick="loadDashboard()" class="hidden text-sm bg-indigo-500/80 hover:bg-indigo-600 text-white font-medium w-10 h-10 md:w-auto md:h-auto md:px-3 md:py-1.5 rounded-lg transition shadow-sm border border-white/10 flex items-center justify-center md:gap-1">
+          <svg class="w-5 h-5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
           <span class="hidden md:inline">สถิติ</span>
         </button>
-        <button id="adminJobBtn" onclick="loadAdminJobs()" class="hidden relative text-sm bg-purple-500/80 hover:bg-purple-600 text-white font-medium px-3 py-1.5 rounded-lg transition shadow-sm border border-white/10 flex items-center gap-1">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+        <button id="adminJobBtn" onclick="loadAdminJobs()" class="hidden relative text-sm bg-purple-500/80 hover:bg-purple-600 text-white font-medium w-10 h-10 md:w-auto md:h-auto md:px-3 md:py-1.5 rounded-lg transition shadow-sm border border-white/10 flex items-center justify-center md:gap-1">
+          <svg class="w-5 h-5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
           <span class="hidden md:inline">งานรอรับ</span>
           <span id="jobCountBadge" class="hidden absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border border-white shadow-sm min-w-[18px] text-center">0</span>
         </button>
-        <button id="adminMyJobBtn" onclick="loadMyJobs()" class="hidden relative text-sm bg-blue-500/80 hover:bg-blue-600 text-white font-medium px-3 py-1.5 rounded-lg transition shadow-sm border border-white/10 flex items-center gap-1">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+        <button id="adminMyJobBtn" onclick="loadMyJobs()" class="hidden relative text-sm bg-blue-500/80 hover:bg-blue-600 text-white font-medium w-10 h-10 md:w-auto md:h-auto md:px-3 md:py-1.5 rounded-lg transition shadow-sm border border-white/10 flex items-center justify-center md:gap-1">
+          <svg class="w-5 h-5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
           <span class="hidden md:inline">กำลังดำเนินการ</span>
           <span id="myJobCountBadge" class="hidden absolute -top-2 -right-2 bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border border-white shadow-sm min-w-[18px] text-center">0</span>
         </button>
         <input type="file" id="importFile" accept=".csv" class="hidden" onchange="uploadImportFile()">
-        <button onclick="confirmLogout()" class="text-sm bg-red-500/80 hover:bg-red-500 text-white px-3 py-1.5 rounded-lg transition ml-1 flex items-center gap-1 shadow-sm">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+        <button onclick="confirmLogout()" class="text-sm bg-red-500/80 hover:bg-red-500 text-white font-medium w-10 h-10 md:w-auto md:h-auto md:px-3 md:py-1.5 rounded-lg transition shadow-sm border border-white/10 flex items-center justify-center md:gap-1">
+          <svg class="w-5 h-5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
           <span class="hidden md:inline">Logout</span>
         </button>
       </div>
@@ -248,6 +248,7 @@
                     <div class="w-24">
                         <label class="block text-sm font-bold mb-1">ชั้น <span class="text-red-500">*</span></label>
                         <select name="floor" class="w-full px-2 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-200 outline-none bg-white text-center cursor-pointer text-sm" required>
+                            <option value="" disabled selected>-- เลือก --</option>
                             <option value="FG">FG</option>
                             <option value="F1">F1</option>
                             <option value="F2">F2</option>
@@ -539,6 +540,59 @@
          </div>
       </div>
 
+    </div>
+
+    <!-- COMPLETE JOB MODAL -->
+    <div id="completeJobModal" class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm hidden z-[90] flex items-center justify-center fade-in duration-200">
+       <div class="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full mx-4 border border-white/50 relative transform transition-all scale-100 ring-1 ring-black/5">
+          <!-- Close Button -->
+          <button onclick="closeCompleteJobModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors bg-gray-50 rounded-full p-1 hover:bg-gray-100">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+          
+          <div class="text-center pt-2">
+             <!-- Icon -->
+             <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-gradient-to-br from-green-100 to-emerald-50 mb-6 shadow-sm ring-4 ring-white">
+                <svg class="h-10 w-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+             </div>
+             
+             <h3 class="text-2xl font-bold text-gray-800 mb-2 tracking-tight">ยืนยันปิดงาน</h3>
+             <p class="text-sm text-gray-500 mb-2">Ticket ID: <span id="completeJobTicketId" class="font-mono font-bold text-green-600"></span></p>
+             <p class="text-sm text-gray-500 mb-6">กรุณากรอกหมายเหตุการดำเนินการ (ถ้ามี)</p>
+             
+             <!-- Form -->
+             <div class="mb-6 text-left">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">หมายเหตุ / รายละเอียดการแก้ไข</label>
+                <textarea 
+                   id="completeJobNotes" 
+                   rows="4"
+                   placeholder="เช่น เปลี่ยนหน้าจอใหม่, ติดตั้งโปรแกรม, ทำความสะอาด..."
+                   class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-400 outline-none bg-gray-50 hover:bg-white transition-all text-gray-800 resize-none text-sm"
+                ></textarea>
+                <p class="text-xs text-gray-400 mt-2">💡 หมายเหตุจะถูกบันทึกในประวัติงาน</p>
+             </div>
+             
+             <!-- Buttons -->
+             <div class="flex gap-3">
+                <button onclick="closeCompleteJobModal()" class="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 text-base font-semibold rounded-2xl transition-all transform active:scale-95 focus:outline-none">
+                   ยกเลิก
+                </button>
+                <button onclick="confirmCompleteJob()" class="flex-1 px-4 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white text-base font-semibold rounded-2xl shadow-lg shadow-green-200 transition-all transform active:scale-95 focus:outline-none flex items-center justify-center gap-2">
+                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                   ยืนยันปิดงาน
+                </button>
+             </div>
+          </div>
+       </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="bg-gradient-to-r from-gray-50 to-gray-100 border-t border-gray-200 py-4 px-6 text-center">
+      <p class="text-xs text-gray-500">
+        <span class="font-medium text-gray-600">Information Technology QSHC</span>
+        <span class="mx-2 text-gray-300">|</span>
+        <span class="text-gray-500">Dev.Nawapon®</span>
+      </p>
     </div>
   </div>
 

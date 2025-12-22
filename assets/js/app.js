@@ -555,6 +555,12 @@ async function loadCompletedJobs() {
 
     currentAdminJobs = res.jobs;
 
+    // Debug: Check what data we're receiving
+    console.log('Completed Jobs Data:', currentAdminJobs);
+    if (currentAdminJobs.length > 0) {
+        console.log('First job sample:', currentAdminJobs[0]);
+    }
+
     if (currentAdminJobs.length === 0) {
         document.getElementById('adminJobList').innerHTML = `<div class="text-center py-10 bg-white rounded-xl border border-dashed border-gray-300"><p class="text-gray-500">ไม่พบประวัติการซ่อมสำเร็จ</p></div>`;
         return;
@@ -582,7 +588,7 @@ async function loadCompletedJobs() {
                 </div>
             </div>
             <div class="text-xs text-gray-500 mb-2">
-                <p>📍 ${job.division}</p>
+                <p> ${job.division}</p>
                 <p>🛠️ โดย: ${job.technician}</p>
                 <p>🕒 เสร็จเมื่อ: ${job.finished_at}</p>
             </div>
@@ -923,12 +929,17 @@ function viewJobDetail(index) {
     if (job.brand || job.model) assetStr += `<br><span class="text-xs text-gray-500">${job.brand} ${job.model}</span>`;
     document.getElementById('detAssetInfo').innerHTML = assetStr;
 
-    document.getElementById('detReporter').innerText = job.reporter;
-    document.getElementById('detDiv').innerText = job.division;
+    document.getElementById('detReporter').innerText = job.reporter || '-';
+    document.getElementById('detDiv').innerText = job.division || '-';
     document.getElementById('detFloor').innerText = job.floor || "-";
 
-    document.getElementById('detContact').innerText = job.contact;
-    document.getElementById('detContactLink').href = `tel:${job.contact}`;
+    const contactText = job.contact || '-';
+    document.getElementById('detContact').innerText = contactText;
+    if (job.contact) {
+        document.getElementById('detContactLink').href = `tel:${job.contact}`;
+    } else {
+        document.getElementById('detContactLink').removeAttribute('href');
+    }
 
     document.getElementById('detIssue').innerText = job.issue;
 
@@ -986,22 +997,13 @@ function deleteCurrentJob() {
 }
 
 async function completeJob(ticketId) {
-    if (!confirm(`งาน ${ticketId} ดำเนินการเสร็จสิ้นแล้ว ยืนยันปิดงานหรือไม่?`)) return;
-    closeJobDetail();
+    // Show the custom modal instead of confirm
+    document.getElementById('completeJobTicketId').textContent = ticketId;
+    document.getElementById('completeJobNotes').value = '';
+    document.getElementById('completeJobModal').classList.remove('hidden');
 
-    // Get current user's name from localStorage
-    const userStr = localStorage.getItem('itSupportUser');
-    const user = userStr ? JSON.parse(userStr) : null;
-    const technicianName = user ? (user.fullName || user.username) : 'Admin IT';
-
-    showModal('กำลังบันทึก', 'ระบบกำลังอัปเดตสถานะเป็น "สำเร็จ"...', 'info');
-    const res = await apiCall('updateJobStatus', { ticketId: ticketId, status: "สำเร็จ", technician: technicianName });
-
-    if (res.success) {
-        showModal('ปิดงานสำเร็จ', 'บันทึกสถานะงานเรียบร้อยแล้ว', 'success', () => { loadAdminJobs(); updateJobBadge(); updateMyJobBadge(); });
-    } else {
-        showModal('ผิดพลาด', res.message, 'info');
-    }
+    // Store ticketId globally for confirmCompleteJob to use
+    window.currentCompleteTicketId = ticketId;
 }
 
 function closeJobDetail() { document.getElementById('jobDetailModal').classList.add('hidden'); }
@@ -1273,6 +1275,55 @@ window.closeConfirmModal = closeConfirmModal;
 window.goHome = goHome;
 window.setCurrentTime = setCurrentTime;
 window.setCurrentDate = setCurrentDate;
+window.closeCompleteJobModal = closeCompleteJobModal;
+window.confirmCompleteJob = confirmCompleteJob;
+
+// Close complete job modal
+function closeCompleteJobModal() {
+    document.getElementById('completeJobModal').classList.add('hidden');
+    document.getElementById('completeJobNotes').value = '';
+}
+
+// Confirm and complete the job
+async function confirmCompleteJob() {
+    const ticketId = window.currentCompleteTicketId;
+    const notes = document.getElementById('completeJobNotes').value.trim();
+
+    if (!ticketId) return;
+
+    // Close the modal and job detail
+    closeCompleteJobModal();
+    closeJobDetail();
+
+    // Get current user's name from localStorage
+    const userStr = localStorage.getItem('itSupportUser');
+    const user = userStr ? JSON.parse(userStr) : null;
+    const technicianName = user ? (user.fullName || user.username) : 'Admin IT';
+
+    showModal('กำลังบันทึก', 'ระบบกำลังอัปเดตสถานะเป็น "สำเร็จ"...', 'info');
+
+    // Send notes along with status update
+    const res = await apiCall('updateJobStatus', {
+        ticketId: ticketId,
+        status: "สำเร็จ",
+        technician: technicianName,
+        notes: notes || 'ดำเนินการเสร็จสิ้น'
+    });
+
+    if (res.success) {
+        showModal('ปิดงานสำเร็จ', 'บันทึกสถานะงานเรียบร้อยแล้ว', 'success', () => {
+            loadAdminJobs();
+            updateJobBadge();
+            updateMyJobBadge();
+        });
+    } else {
+        showModal('ผิดพลาด', res.message, 'info');
+    }
+
+    // Clear the stored ticket ID
+    window.currentCompleteTicketId = null;
+}
+
 
 // Set current date function
 function setCurrentDate() {
