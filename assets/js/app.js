@@ -297,13 +297,39 @@ function enableManualInput() {
     document.getElementById('deviceName').focus();
 }
 
+function setCurrentTime() {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const currentTime = `${hours}:${minutes}`;
+
+    const timeInput = document.getElementById('customTime');
+    timeInput.value = currentTime;
+
+    // Add visual feedback
+    timeInput.classList.add('border-green-400', 'bg-green-50');
+    setTimeout(() => {
+        timeInput.classList.remove('border-green-400', 'bg-green-50');
+    }, 1000);
+}
+
+
 async function submitRepair() {
     var form = document.getElementById('repairForm');
     var btn = document.getElementById('btnSubmit');
 
-    if (form.assetCode.value == "" || form.contact.value == "" ||
-        form.division.value == "" || form.floor.value == "" || form.problemType.value == "") {
-        return showModal('ข้อมูลไม่ครบถ้วน', 'กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน:\n- รหัสครุภัณฑ์\n- ประเภทปัญหา\n- หน่วยงาน/ชั้น\n- เบอร์ติดต่อ', 'info');
+    // ตรวจสอบฟิลด์ที่จำเป็น (รหัสครุภัณฑ์ไม่บังคับ)
+    const requiredFields = [];
+
+    if (form.contact.value == "") requiredFields.push('เบอร์ติดต่อ');
+    if (form.division.value == "") requiredFields.push('หน่วยงาน');
+    if (form.floor.value == "") requiredFields.push('ชั้น');
+    if (form.problemType.value == "") requiredFields.push('ประเภทปัญหา');
+
+    if (requiredFields.length > 0) {
+        return showModal('ข้อมูลไม่ครบถ้วน',
+            'กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน:\n- ' + requiredFields.join('\n- '),
+            'info');
     }
 
     btn.disabled = true;
@@ -1245,6 +1271,38 @@ window.submitAddTechnician = submitAddTechnician;
 window.deleteCurrentJob = deleteCurrentJob;
 window.closeConfirmModal = closeConfirmModal;
 window.goHome = goHome;
+window.setCurrentTime = setCurrentTime;
+window.setCurrentDate = setCurrentDate;
+
+// Set current date function
+function setCurrentDate() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const currentDate = `${year}-${month}-${day}`;
+
+    const dateInput = document.getElementById('customDate');
+    dateInput.value = currentDate;
+
+    // Add visual feedback
+    dateInput.classList.add('border-green-400', 'bg-green-50');
+    setTimeout(() => {
+        dateInput.classList.remove('border-green-400', 'bg-green-50');
+    }, 1000);
+}
+
+// Auto-format time input
+function formatTimeInput(input) {
+    let value = input.value.replace(/[^0-9]/g, ''); // Remove non-digits
+
+    if (value.length >= 2) {
+        // Add colon after first 2 digits
+        value = value.substring(0, 2) + ':' + value.substring(2, 4);
+    }
+
+    input.value = value;
+}
 
 // Check for persistent session on load
 window.addEventListener('DOMContentLoaded', () => {
@@ -1259,4 +1317,24 @@ window.addEventListener('DOMContentLoaded', () => {
             localStorage.removeItem('itSupportUser');
         }
     }
+
+    // Add time input formatter
+    const timeInput = document.getElementById('customTime');
+    if (timeInput) {
+        timeInput.addEventListener('input', function (e) {
+            formatTimeInput(e.target);
+        });
+
+        // Validate on blur
+        timeInput.addEventListener('blur', function (e) {
+            const value = e.target.value;
+            if (value && !value.match(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/)) {
+                e.target.classList.add('border-red-300', 'bg-red-50');
+                setTimeout(() => {
+                    e.target.classList.remove('border-red-300', 'bg-red-50');
+                }, 2000);
+            }
+        });
+    }
 });
+

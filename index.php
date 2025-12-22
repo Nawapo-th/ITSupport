@@ -119,13 +119,13 @@
             <div class="bg-gray-50 p-5 rounded-xl border border-gray-100 space-y-4">
                <div>
                   <h3 class="font-bold text-gray-800 mb-3 flex items-center gap-2"><svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg> ข้อมูลครุภัณฑ์</h3>
-                  <label class="block text-sm font-semibold mb-1">รหัสครุภัณฑ์ <span class="text-red-500">*</span></label>
+                  <label class="block text-sm font-semibold mb-1">รหัสครุภัณฑ์ <span class="text-gray-400 font-normal text-xs">(ไม่บังคับ) แต่แนะนำให้กรอก</span></label>
                   <div class="relative">
                     <input type="text" name="assetCode" id="assetCodeInput" 
                            onkeydown="if(event.key === 'Enter') { event.preventDefault(); autoFillAssetInfo(); }" 
                            onblur="autoFillAssetInfo()" 
                            class="w-full pl-10 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-200 outline-none bg-white font-mono tracking-wide" 
-                           placeholder="เช่น 640001" required>
+                           placeholder="เช่น 6421130000xxx (ถ้ามี)">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path></svg>
                     </div>
@@ -201,11 +201,31 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
                         <label class="block text-sm font-bold mb-1 text-gray-800">วันที่แจ้ง <span class="text-gray-400 font-normal text-xs">(ค่าปกติ: วันนี้)</span></label>
-                        <input type="date" name="customDate" id="customDate" class="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-orange-400 focus:ring-4 focus:ring-orange-50 outline-none transition-all text-sm">
+                        <div class="flex gap-2">
+                            <input type="date" name="customDate" id="customDate" class="flex-1 p-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-orange-400 focus:ring-4 focus:ring-orange-50 outline-none transition-all text-sm">
+                            <button type="button" onclick="setCurrentDate()" 
+                                    class="px-3 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl transition-all shadow-sm hover:shadow-md flex items-center gap-1 text-xs font-bold whitespace-nowrap"
+                                    title="ใส่วันที่ปัจจุบัน">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                <span class="hidden sm:inline">วันนี้</span>
+                            </button>
+                        </div>
                     </div>
                     <div>
                         <label class="block text-sm font-bold mb-1 text-gray-800">เวลา <span class="text-gray-400 font-normal text-xs">(ค่าปกติ: ปัจจุบัน)</span></label>
-                        <input type="time" name="customTime" id="customTime" class="w-full p-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-orange-400 focus:ring-4 focus:ring-orange-50 outline-none transition-all text-sm">
+                        <div class="flex gap-2">
+                            <input type="text" name="customTime" id="customTime" 
+                                   placeholder="เช่น 14:30 หรือ 09:15" 
+                                   pattern="([01]?[0-9]|2[0-3]):[0-5][0-9]"
+                                   title="กรุณากรอกเวลาในรูปแบบ ชั่วโมง:นาที (เช่น 14:30)"
+                                   class="flex-1 p-2.5 border border-gray-200 rounded-xl bg-gray-50 focus:bg-white focus:border-orange-400 focus:ring-4 focus:ring-orange-50 outline-none transition-all text-sm">
+                            <button type="button" onclick="setCurrentTime()" 
+                                    class="px-3 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl transition-all shadow-sm hover:shadow-md flex items-center gap-1 text-xs font-bold whitespace-nowrap"
+                                    title="ใส่เวลาปัจจุบัน">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span class="hidden sm:inline">ตอนนี้</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -227,7 +247,7 @@
                     </div>
                     <div class="w-24">
                         <label class="block text-sm font-bold mb-1">ชั้น <span class="text-red-500">*</span></label>
-                        <select name="floor" class="w-full px-2 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-200 outline-none bg-white text-center cursor-pointer text-sm" required>
+                        <select name="floor" class="w-full px-2 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-200 outline-none bg-white text-center cursor-pointer text-sm" required>
                             <option value="FG">FG</option>
                             <option value="F1">F1</option>
                             <option value="F2">F2</option>
