@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Debug Badge Issue</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        .box {
+            background: #f5f5f5;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+
+        .error {
+            background: #ffebee;
+        }
+
+        .success {
+            background: #e8f5e9;
+        }
+
+        pre {
+            background: white;
+            padding: 10px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Debug: Badge Count Issue</h1>
+    <button onclick="runDebug()">Run Full Debug</button>
+    <div id="results"></div>
+
+    <script>
+        async function runDebug() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<p>Running debug...</p>';
+
+            // 1. Check localStorage
+            const userStr = localStorage.getItem('itSupportUser');
+            const user = userStr ? JSON.parse(userStr) : null;
+
+            results.innerHTML += `<div class="box">
+                <h3>1. LocalStorage User Data</h3>
+                <pre>${JSON.stringify(user, null, 2)}</pre>
+            </div>`;
+
+            if (!user) {
+                results.innerHTML += `<div class="box error"><strong>ERROR: No user in localStorage!</strong></div>`;
+                return;
+            }
+
+            // 2. Extract technician name
+            const techName = user.fullName || user.username || user.loginName || 'Admin IT';
+            results.innerHTML += `<div class="box">
+                <h3>2. Technician Name Used</h3>
+                <p><strong>${techName}</strong></p>
+                <p>Length: ${techName.length} characters</p>
+                <p>Bytes: ${new Blob([techName]).size} bytes</p>
+            </div>`;
+
+            // 3. Test API call
+            const url = `api/api.php?action=getMyJobsCount&technician=${encodeURIComponent(techName)}`;
+            results.innerHTML += `<div class="box">
+                <h3>3. API URL</h3>
+                <pre>${url}</pre>
+            </div>`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+
+                results.innerHTML += `<div class="box ${data.count > 0 ? 'success' : 'error'}">
+                    <h3>4. API Response</h3>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                </div>`;
+            } catch (e) {
+                results.innerHTML += `<div class="box error">
+                    <h3>4. API Error</h3>
+                    <pre>${e.message}</pre>
+                </div>`;
+            }
+
+            // 4. List all jobs with status "กำลังดำเนินการ"
+            try {
+                const response2 = await fetch('test_api.php?action=listAll');
+                const data2 = await response2.json();
+
+                const inProgressJobs = data2.jobs.filter(j => j.status === 'กำลังดำเนินการ');
+
+                results.innerHTML += `<div class="box">
+                    <h3>5. All "กำลังดำเนินการ" Jobs in Database</h3>
+                    <pre>${JSON.stringify(inProgressJobs, null, 2)}</pre>
+                </div>`;
+
+                // 6. Compare names
+                if (inProgressJobs.length > 0) {
+                    const dbName = inProgressJobs[0].technician;
+                    const match = dbName === techName;
+
+                    results.innerHTML += `<div class="box ${match ? 'success' : 'error'}">
+                        <h3>6. Name Comparison</h3>
+                        <p><strong>From localStorage:</strong> "${techName}"</p>
+                        <p><strong>From database:</strong> "${dbName}"</p>
+                        <p><strong>Match:</strong> ${match ? '✅ YES' : '❌ NO'}</p>
+                        ${!match ? `
+                            <p><strong>Difference:</strong></p>
+                            <p>localStorage length: ${techName.length}</p>
+                            <p>Database length: ${dbName.length}</p>
+                            <p>localStorage bytes: ${new Blob([techName]).size}</p>
+                            <p>Database bytes: ${new Blob([dbName]).size}</p>
+                        ` : ''}
+                    </div>`;
+                }
+            } catch (e) {
+                results.innerHTML += `<div class="box error">
+                    <h3>5. Database Query Error</h3>
+                    <pre>${e.message}</pre>
+                </div>`;
+            }
+        }
+    </script>
+</body>
+
+</html>

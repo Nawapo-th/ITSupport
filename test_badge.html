@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Test Badge API - Fixed</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        .result {
+            background: #f0f0f0;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Testing Badge APIs - Fixed Version</h1>
+    <button onclick="runTests()">Run Tests</button>
+    <div id="results"></div>
+
+    <script>
+        async function runTests() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<p>Running tests...</p>';
+
+            // Test 1: List all jobs
+            try {
+                const res1 = await fetch('test_api.php?action=listAll');
+                const data1 = await res1.json();
+                results.innerHTML += `<div class="result success"><strong>All Jobs (last 10):</strong><pre>${JSON.stringify(data1, null, 2)}</pre></div>`;
+            } catch (e) {
+                results.innerHTML += `<div class="result error"><strong>listAll ERROR:</strong> ${e.message}</div>`;
+            }
+
+            // Test 2: Pending count
+            try {
+                const res2 = await fetch('test_api.php?action=testPending');
+                const data2 = await res2.json();
+                results.innerHTML += `<div class="result success"><strong>Pending Jobs Count:</strong><pre>${JSON.stringify(data2, null, 2)}</pre></div>`;
+            } catch (e) {
+                results.innerHTML += `<div class="result error"><strong>testPending ERROR:</strong> ${e.message}</div>`;
+            }
+
+            // Test 3: My jobs count
+            try {
+                const res3 = await fetch('test_api.php?action=testMyJobs&technician=Admin IT');
+                const data3 = await res3.json();
+                results.innerHTML += `<div class="result success"><strong>My Jobs Count (Admin IT):</strong><pre>${JSON.stringify(data3, null, 2)}</pre></div>`;
+            } catch (e) {
+                results.innerHTML += `<div class="result error"><strong>testMyJobs ERROR:</strong> ${e.message}</div>`;
+            }
+
+            // Test 4: Original API
+            try {
+                const res4 = await fetch('api/api.php?action=getPendingJobsCount');
+                const text4 = await res4.text();
+                results.innerHTML += `<div class="result"><strong>Original API Response (raw):</strong><pre>${text4}</pre></div>`;
+
+                try {
+                    const json4 = JSON.parse(text4);
+                    results.innerHTML += `<div class="result success"><strong>Original API (parsed):</strong><pre>${JSON.stringify(json4, null, 2)}</pre></div>`;
+                } catch (parseError) {
+                    results.innerHTML += `<div class="result error"><strong>Original API Parse Error:</strong> ${parseError.message}</div>`;
+                }
+            } catch (e) {
+                results.innerHTML += `<div class="result error"><strong>Original API ERROR:</strong> ${e.message}</div>`;
+            }
+        }
+    </script>
+</body>
+
+</html>
