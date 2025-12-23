@@ -1,8 +1,8 @@
 <?php
 $host = "db";
 $db   = "inventory_db";
-$user = "user";
-$pass = "password";
+$user = "root";
+$pass = "nawapon1234";
 $charset = 'utf8mb4';
 
 $dsn = "mysql:host=$host;dbname=$db;charset=$charset";

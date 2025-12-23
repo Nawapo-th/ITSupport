@@ -47,7 +47,7 @@ try {
                     $response['fullName'] = $userData['fullName'] ?? $userData['FullName'] ?? $username;
                     $response['division'] = $userData['division'] ?? '';
                     $response['department'] = $userData['department'] ?? '';
-                    $response['isAdmin'] = (trim($response['division']) === "งานเทคโนโลยีสารสนเทศ");
+                    $response['isAdmin'] = (in_array(trim($response['division']), ["งานเทคโนโลยีสารสนเทศ", "จ้างเหมา งานเทคโนโลยีสารสนเทศ"]));
                     $response['data'] = $userData;
                 }
             }
@@ -64,7 +64,7 @@ try {
                      $response['success'] = true;
                      $response['fullName'] = $user['full_name'];
                      $response['division'] = $user['division'];
-                     $response['isAdmin'] = ($user['role'] === 'Admin');
+                     $response['isAdmin'] = ($user['role'] === 'Admin' || in_array(trim($user['division']), ["งานเทคโนโลยีสารสนเทศ", "จ้างเหมา งานเทคโนโลยีสารสนเทศ"]));
                 } else {
                      if($httpCode !== 200) {
                         $response['message'] = "Login Failed (External API: $httpCode, Local: Not found)";
@@ -386,7 +386,7 @@ try {
                     $stmt->execute([$reporter]);
                 } else {
                     // User ทั่วไป ไม่เห็นงานที่แจ้งโดย Admin (division = "งานเทคโนโลยีสารสนเทศ")
-                    $stmt = $pdo->prepare("SELECT * FROM repairs WHERE reporter_name = ? AND division != 'งานเทคโนโลยีสารสนเทศ' ORDER BY created_at DESC");
+                    $stmt = $pdo->prepare("SELECT * FROM repairs WHERE reporter_name = ? AND division NOT IN ('งานเทคโนโลยีสารสนเทศ', 'จ้างเหมา งานเทคโนโลยีสารสนเทศ') ORDER BY created_at DESC");
                     $stmt->execute([$reporter]);
                 }
                 $jobs = $stmt->fetchAll();
