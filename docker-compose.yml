@@ -1,51 +1,30 @@
-version: '3.8'
-
 services:
   web:
     build: .
     container_name: web_app
+    restart: always
+    ports:
+      - "3003"
+    environment:
+      - DB_HOST=10.67.3.111
+      - DB_USER=root
+      - DB_PASSWORD=Qshc@68335
+      - DB_NAME=inventory_db
+      - PORT=3003
+    networks:
+      - app-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: it_support_nginx
+    restart: always
     ports:
       - "80:80"
     volumes:
-      - ./:/var/www/html
-    depends_on:
-      - db
-    networks:
-      - app-network
-
-  db:
-    image: mysql:latest
-    container_name: mysql_db
-    restart: always
-    ports:
-      - "3306:3306"
-    environment:
-      MYSQL_ROOT_PASSWORD: nawapon1234
-      MYSQL_DATABASE: inventory_db
-      MYSQL_USER: user
-      MYSQL_PASSWORD: password
-    volumes:
-      - db_data:/var/lib/mysql
-    networks:
-      - app-network
-
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin
-    container_name: phpmyadmin
-    restart: always
-    ports:
-      - "8080:80"
-    environment:
-      PMA_HOST: db
-      MYSQL_ROOT_PASSWORD: nawapon1234
-    depends_on:
-      - db
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
     networks:
       - app-network
 
 networks:
   app-network:
     driver: bridge
-
-volumes:
-  db_data:

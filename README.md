@@ -43,8 +43,9 @@ docker-compose up -d
 ```
 
 4. เข้าถึงระบบผ่าน:
-- **Application**: http://localhost:8080
-- **phpMyAdmin**: http://localhost:8081
+- **Application**: http://localhost:3003
+- **phpMyAdmin**: http://localhost:8080
+- **MySQL**: localhost:3306 (ภายในเครือข่าย Docker ใช้ชื่อ host ว่า db)
 
 ## โครงสร้างโปรเจกต์
 
