@@ -331,3 +331,38 @@ html {
     background-color: #fed7aa;
     color: #1f2937;
 }
+
+/* Expandable Remarks */
+.remarks-container {
+    position: relative;
+    width: 100%;
+}
+
+.remarks-textarea {
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.remarks-textarea.collapsed {
+    max-height: 2.8rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.remarks-expand-btn {
+    display: block;
+    width: 100%;
+    text-align: right;
+    font-size: 0.7rem;
+    color: #3b82f6;
+    font-weight: bold;
+    margin-top: 2px;
+    cursor: pointer;
+}
+
+.remarks-expand-btn:hover {
+    color: #2563eb;
+    text-decoration: underline;
+}

@@ -4216,7 +4216,11 @@ function initializeDeliveryFormV2(jobs, startStr, endStr, techName) {
                 <input type="text" value="${qty}" class="w-full border-gray-200 rounded-lg text-sm text-center focus:ring-blue-500 focus:border-blue-500 bg-white/50">
             </td>
             <td class="p-2 align-top">
-                <textarea class="w-full border-gray-200 rounded-lg text-xs focus:ring-blue-500 focus:border-blue-500 resize-none text-gray-500 bg-transparent" rows="${Math.max(2, remarks.split('\\n').length)}">${remarks}</textarea>
+                <div class="remarks-container">
+                    <textarea class="remarks-textarea collapsed w-full border-gray-200 rounded-lg text-[10px] focus:ring-blue-500 focus:border-blue-500 resize-none text-gray-500 bg-transparent"
+                               onfocus="toggleRemarks(this, true)">${remarks}</textarea>
+                    ${remarks && remarks.length > 5 ? `<div class="remarks-expand-btn" onclick="toggleRemarks(this.previousElementSibling)">ดูทั้งหมด</div>` : ''}
+                </div>
             </td>
         `;
         tableBody.appendChild(row);
@@ -4590,3 +4594,24 @@ window.addNewAssessor = addNewAssessor;
 window.loadKpiStats = loadKpiStats;
 window.changeUserJobMonth = changeUserJobMonth;
 window.changeUserJobYear = changeUserJobYear;
+
+function toggleRemarks(el, forceExpand = false) {
+    if (!el) return;
+    const container = el.closest('.remarks-container');
+    const textarea = container ? container.querySelector('.remarks-textarea') : el;
+    const btn = container ? container.querySelector('.remarks-expand-btn') : null;
+
+    const isCollapsed = textarea.classList.contains('collapsed');
+
+    if (forceExpand || isCollapsed) {
+        textarea.classList.remove('collapsed');
+        textarea.style.height = 'auto'; // Reset height first
+        textarea.style.height = textarea.scrollHeight + 'px';
+        if (btn) btn.innerText = 'ย่อลง';
+    } else {
+        textarea.classList.add('collapsed');
+        textarea.style.height = ''; // Let CSS handle collapsed height
+        if (btn) btn.innerText = 'ดูทั้งหมด';
+    }
+}
+window.toggleRemarks = toggleRemarks;
