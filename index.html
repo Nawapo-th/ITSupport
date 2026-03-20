@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ระบบบันทึกงานแจ้งซ่อมIT</title>
+  <link rel="icon" type="image/png" href="assets/images/settings.png">
 
   <script src="assets/js/tailwindcss.js"></script>
   <script>
@@ -15,6 +16,7 @@
   </script>
 
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=swap" rel="stylesheet">
   <link href="assets/css/style.css?v=1.0.0" rel="stylesheet">
 
   <!-- Libraries for Word Report Generation -->
@@ -25,7 +27,7 @@
 </head>
 
 <body class="bg-orange-50 min-h-screen relative text-gray-800"
-  style="font-family: 'TH Sarabun New', 'Sarabun', sans-serif;">
+  style="font-family: 'TH Sarabun New', 'Sarabun', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';">
 
   <!-- Main Container -->
   <div
@@ -36,14 +38,8 @@
       class="bg-gradient-to-r from-orange-400 to-amber-300 p-2 md:p-3 text-white flex justify-between items-center shadow-md">
       <div id="mainHeaderLogo" class="flex items-center gap-2 md:gap-3 text-white drop-shadow-sm transition"
         onclick="goHome()">
-        <div class="bg-white/20 p-1.5 md:p-2 rounded-lg backdrop-blur-sm">
-          <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z">
-            </path>
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z">
-            </path>
-          </svg>
+        <div class="bg-white p-1 md:p-1.5 rounded-xl shadow-md overflow-hidden flex items-center justify-center">
+          <img src="assets/images/settings.png" class="w-10 h-10 md:w-12 md:h-12 object-contain" alt="Logo">
         </div>
         <div class="flex flex-col">
           <span class="text-base md:text-xl font-bold leading-tight">ระบบบันทึกงานแจ้งซ่อมIT</span>
@@ -280,16 +276,10 @@
                     <option value="" disabled selected class="text-gray-400">-- เลือกหมวดหมู่ปัญหาหลัก
                       (เลือกหัวข้อเดียว) --</option>
 
-                    <option value="ฮาร์ดแวร์ (Hardware)">🔌 ฮาร์ดแวร์ (Hardware: เปิดไม่ติด, จอฟ้า, เครื่องร้อน,
-                      อุปกรณ์เสื่อมสภาพ)</option>
-                    <option value="ซอฟต์แวร์ (Software)">🪟 ซอฟต์แวร์ (Software: เครื่องช้า, ค้าง, ไวรัส,
-                      โปรแกรมใช้งานไม่ได้)</option>
+                    <option value="ฮาร์ดแวร์ (Hardware)">💻 ฮาร์ดแวร์และอุปกรณ์ต่อพ่วง (Hardware: เปิดไม่ติด, จอฟ้า, เครื่องร้อน, อุปกรณ์เสื่อมสภาพ, ปริ้นเตอร์, เมาส์, คีย์บอร์ด)</option>
+                    <option value="ซอฟต์แวร์ (Software)">💾 ซอฟต์แวร์และบัญชีผู้ใช้ (Software: เครื่องช้า, ค้าง, ไวรัส, โปรแกรมใช้งานไม่ได้, ลืมรหัสผ่าน, บัญชีล็อก)</option>
                     <option value="เครือข่าย/เน็ตเวิร์ก (Network)">🌐 เครือข่าย (Network: ต่อเน็ตไม่ได้, Wi-Fi, กล้อง
                       CCTV/สแกนนิ้ว)</option>
-                    <option value="อุปกรณ์ต่อพ่วง (Peripherals)">🖱️ อุปกรณ์ต่อพ่วง (Peripherals: ปริ้นเตอร์, เมาส์,
-                      คีย์บอร์ด, เสียง)</option>
-                    <option value="บัญชีผู้ใช้/สิทธิ์ (Account)">🔑 บัญชีผู้ใช้ (Account: ลืมรหัสผ่าน, บัญชีล็อก,
-                      ล็อกอินไม่ได้)</option>
                     <option value="อื่นๆ (Others)">📝 อื่นๆ (ปัญหาอื่นๆ โปรดระบุสั้นๆ ในรายละเอียดด้านล่าง)</option>
                   </select>
                   <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-gray-500">
@@ -311,7 +301,8 @@
                       placeholder="เลือก หรือระบุสถานที่..." required autocomplete="off"
                       onfocus="toggleLocationDropdown(true)"
                       onblur="setTimeout(() => toggleLocationDropdown(false), 200)"
-                      oninput="filterLocationDropdown(this.value)">
+                      oninput="filterLocationDropdown(this.value)"
+                      onkeydown="handleLocationKeydown(event)">
 
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                       <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -752,6 +743,56 @@
           </div>
         </div>
 
+        <!-- KPI Performance Statistics (New) -->
+        <div class="mb-6">
+          <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+              <div class="text-center md:text-left">
+                <h3 class="font-bold text-gray-800 text-lg">สถิติประสิทธิภาพการทำงาน (KPI)</h3>
+                <p class="text-xs text-gray-400">สรุปเวลาเฉลี่ยและคะแนนประเมินตามเกณฑ์ระยะเวลา</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <select id="kpiMonthFilter" onchange="loadKpiStats()"
+                  class="bg-indigo-50 border border-indigo-100 text-indigo-700 text-sm rounded-xl px-4 py-2 outline-none focus:ring-4 focus:ring-indigo-100 transition-all cursor-pointer font-bold">
+                  <option value="">ภาพรวมทั้งปี</option>
+                  <option value="01">มกราคม</option>
+                  <option value="02">กุมภาพันธ์</option>
+                  <option value="03">มีนาคม</option>
+                  <option value="04">เมษายน</option>
+                  <option value="05">พฤษภาคม</option>
+                  <option value="06">มิถุนายน</option>
+                  <option value="07">กรกฎาคม</option>
+                  <option value="08">สิงหาคม</option>
+                  <option value="09">กันยายน</option>
+                  <option value="10">ตุลาคม</option>
+                  <option value="11">พฤศจิกายน</option>
+                  <option value="12">ธันวาคม</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <!-- KPI Bar Chart -->
+              <div class="bg-gray-50/50 rounded-xl border border-gray-100 p-4">
+                <h4 class="text-sm font-bold text-gray-600 mb-4 text-center">ระยะเวลาซ่อมเฉลี่ยแยกตามประเภท (นาที)</h4>
+                <div class="h-64 relative w-full">
+                  <canvas id="kpiDurationChart"></canvas>
+                </div>
+              </div>
+
+              <!-- KPI Score Summary -->
+              <div class="bg-gray-50/50 rounded-xl border border-gray-100 p-4">
+                <h4 class="text-sm font-bold text-gray-600 mb-4 text-center">คะแนนสรุปตามเกณฑ์ KPI (<span
+                    id="kpiAverageDisplay">เฉลี่ย 5.0</span>)</h4>
+                <div id="kpiScoreTableContainer" class="overflow-x-auto h-64 flex flex-col justify-center">
+                  <!-- Table injected via JS -->
+                  <div class="text-center text-gray-400 italic">กำลังคำนวณคะแนน...</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 
@@ -939,6 +980,8 @@
                     class="font-semibold text-emerald-800"></span></p>
                 <p class="text-sm hidden"><span class="text-gray-500 font-bold">⏰ เวลาที่ดำเนินการเสร็จ:</span> <span
                     id="detFinishTime"></span></p>
+                <p id="detWorkingTimeRow" class="text-sm hidden"><span class="text-gray-500 font-bold">⏱️ ระยะเวลาที่ใช้
+                    (KPI):</span> <span id="detWorkingTime" class="font-bold text-orange-600"></span> นาที</p>
                 <p class="text-sm"><span class="text-gray-500 font-bold">📝 หมายเหตุการแก้ไข:</span></p>
                 <div id="detNotes"
                   class="text-sm text-gray-700 bg-white p-3 rounded-lg border border-emerald-100 italic"></div>

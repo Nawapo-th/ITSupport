@@ -215,6 +215,8 @@ function handleLoginSuccess(user) {
 }
 
 let availableDepartments = [];
+let highlightedLocationIndex = -1;
+let currentFilteredLocations = [];
 
 async function loadDepartments() {
     const res = await apiCall('getDepartments', {}, 'GET');
@@ -229,24 +231,64 @@ function renderLocationDropdown(filterText = '') {
     const input = document.getElementById('repairLocation');
     dropdown.innerHTML = '';
 
-    const filtered = availableDepartments.filter(d =>
+    currentFilteredLocations = availableDepartments.filter(d =>
         !filterText || d.toLowerCase().includes(filterText.toLowerCase())
     );
 
-    if (filtered.length === 0) {
+    if (currentFilteredLocations.length === 0) {
         dropdown.innerHTML = `<div class="p-3 text-sm text-gray-400 text-center italic">ไม่พบข้อมูล (พิมพ์เพื่อเพิ่มใหม่)</div>`;
         return;
     }
 
-    filtered.forEach(dept => {
+    currentFilteredLocations.forEach((dept, index) => {
         const div = document.createElement('div');
-        div.className = "px-4 py-2 hover:bg-orange-50 cursor-pointer text-sm text-gray-700 border-b border-gray-50 last:border-0 transition";
+        // Add highlighted class if index matches
+        const isHighlighted = index === highlightedLocationIndex;
+        div.className = `px-4 py-2 hover:bg-orange-50 cursor-pointer text-sm text-gray-700 border-b border-gray-50 last:border-0 transition ${isHighlighted ? 'bg-orange-100' : ''}`;
         div.innerText = dept;
         div.onmousedown = function () { // use mousedown to fire before blur
             selectLocation(dept);
         };
         dropdown.appendChild(div);
+
+        if (isHighlighted) {
+            // Ensure the highlighted item is visible
+            div.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
     });
+}
+
+function handleLocationKeydown(event) {
+    const dropdown = document.getElementById('customLocationDropdown');
+    const isHidden = dropdown.classList.contains('hidden');
+
+    if (event.key === 'ArrowDown') {
+        if (isHidden) {
+            toggleLocationDropdown(true);
+            return;
+        }
+        event.preventDefault();
+        highlightedLocationIndex++;
+        if (highlightedLocationIndex >= currentFilteredLocations.length) {
+            highlightedLocationIndex = 0;
+        }
+        renderLocationDropdown(document.getElementById('repairLocation').value);
+    } else if (event.key === 'ArrowUp') {
+        if (isHidden) return;
+        event.preventDefault();
+        highlightedLocationIndex--;
+        if (highlightedLocationIndex < 0) {
+            highlightedLocationIndex = currentFilteredLocations.length - 1;
+        }
+        renderLocationDropdown(document.getElementById('repairLocation').value);
+    } else if (event.key === 'Enter') {
+        if (highlightedLocationIndex >= 0 && highlightedLocationIndex < currentFilteredLocations.length) {
+            event.preventDefault();
+            selectLocation(currentFilteredLocations[highlightedLocationIndex]);
+        }
+    } else if (event.key === 'Escape') {
+        toggleLocationDropdown(false);
+    }
 }
 
 function toggleLocationDropdown(state) {
@@ -256,14 +298,14 @@ function toggleLocationDropdown(state) {
     if (state === 'toggle') {
         const isHidden = dropdown.classList.contains('hidden');
         if (isHidden) {
+            highlightedLocationIndex = -1; // Reset highlight
             renderLocationDropdown(''); // Show full list ALWAYS when toggling via button
             dropdown.classList.remove('hidden');
-            // Do NOT focus input here, otherwise it triggers onfocus which re-filters the list
         } else {
             dropdown.classList.add('hidden');
         }
     } else if (state === true) {
-        // Only filter if not already visible/populated by toggle? NAh, normal focus behavior is filter.
+        highlightedLocationIndex = -1; // Reset highlight
         renderLocationDropdown(input.value);
         dropdown.classList.remove('hidden');
     } else {
@@ -272,6 +314,7 @@ function toggleLocationDropdown(state) {
 }
 
 function filterLocationDropdown(text) {
+    highlightedLocationIndex = -1; // Reset highlight on search
     renderLocationDropdown(text);
     document.getElementById('customLocationDropdown').classList.remove('hidden');
 }
@@ -499,12 +542,23 @@ async function submitRepair() {
     var issueDetail = form.issue.value ? " " + form.issue.value : "";
     var fullIssue = "[" + form.problemType.value + "]" + issueDetail;
 
+    const categoryMap = {
+        'ฮาร์ดแวร์ (Hardware)': 'hw',
+        'ซอฟต์แวร์ (Software)': 'sw',
+        'เครือข่าย/เน็ตเวิร์ก (Network)': 'net',
+        'อุปกรณ์ต่อพ่วง (Peripherals)': 'hw',
+        'บัญชีผู้ใช้/สิทธิ์ (Account)': 'sw',
+        'อื่นๆ (Others)': 'other'
+    };
+    const reqCategory = categoryMap[form.problemType.value] || 'other';
+
     var formData = {
         assetCode: form.assetCode.value,
         deviceName: form.deviceName.value,
         brand: form.brand.value,
         model: form.model.value,
         issue: fullIssue,
+        category: reqCategory,
         contact: form.contact.value,
         name: form.name.value,
         division: form.division.value,
@@ -527,6 +581,7 @@ async function submitRepair() {
         if (typeof updateJobBadge === 'function') updateJobBadge();
 
         showModal('แจ้งซ่อมสำเร็จ!', res.message, 'success');
+        loadDepartments(); // Refresh departments/locations list
     } else {
         alert("Error: " + res.message);
     }
@@ -662,6 +717,9 @@ function updateDashboardUI(data) {
         document.getElementById('res30Days').innerText = data.assetStats.last1Month + " ครั้ง";
         document.getElementById('res365Days').innerText = data.assetStats.last1Year + " ครั้ง";
         document.getElementById('assetSearchResult').classList.remove('hidden');
+    }
+    if (data.kpiStats) {
+        renderKPIDashboard(data.kpiStats);
     }
 }
 
@@ -1056,7 +1114,7 @@ function applyJobHistoryFilter() {
 
 
 // --- Load Completed Jobs (History) as Page ---
-async function loadCompletedJobs(fromDashboard = false, monthFilter = null) {
+async function loadCompletedJobs(fromDashboard = false, monthFilter = null, assessmentFilter = null) {
     currentView = 'completed';
     let backDest = fromDashboard ? 'dashboard' : null;
 
@@ -1068,6 +1126,11 @@ async function loadCompletedJobs(fromDashboard = false, monthFilter = null) {
         const yearThai = parseInt(y) + 543;
         title += ` - ${monthName} ${yearThai}`;
     }
+    
+    if (assessmentFilter) {
+        let text = assessmentFilter === 'not_assessed' ? '(ยังไม่ประเมิน)' : `(ประเมิน${assessmentFilter})`;
+        title += ` ${text}`;
+    }
 
     showJobListPage(
         title,
@@ -1076,7 +1139,9 @@ async function loadCompletedJobs(fromDashboard = false, monthFilter = null) {
         backDest
     );
 
-    const data = monthFilter ? { month: monthFilter } : {};
+    const data = {};
+    if (monthFilter) data.month = monthFilter;
+    if (assessmentFilter) data.assessmentStatus = assessmentFilter;
     const res = await apiCall('getCompletedJobs', data, 'GET');
 
     if (!res.success) { document.getElementById('jobListContainer').innerHTML = `<div class="text-red-500 text-center">${res.message}</div>`; return; }
@@ -1161,7 +1226,16 @@ async function loadCompletedJobs(fromDashboard = false, monthFilter = null) {
 
     currentAdminJobs.forEach((job, index) => {
         // Check SLA Status & Formatting
-
+        let assessmentBadge = '';
+        if (job.isAssessed) {
+            let ratingColor = job.assessmentRating === 'ดีมาก' ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                              job.assessmentRating === 'ดี' ? 'bg-amber-100 text-amber-700 border-amber-200' : 
+                              job.assessmentRating === 'พอใช้' ? 'bg-orange-100 text-orange-700 border-orange-200' : 
+                              'bg-red-100 text-red-700 border-red-200';
+            assessmentBadge = `<div class="${ratingColor} px-2 py-0.5 rounded-md text-[10px] font-bold border mt-1 shadow-sm w-full text-center tracking-wide">ประเมินแล้ว: ${job.assessmentRating || 'ใช่'}</div>`;
+        } else {
+            assessmentBadge = `<div class="bg-gray-100 text-gray-500 px-2 py-0.5 rounded-md text-[10px] font-bold border border-gray-200 mt-1 shadow-sm w-full text-center tracking-wide">ยังไม่ประเมิน</div>`;
+        }
 
         html += `
         <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition opacity-95 hover:opacity-100">
@@ -1171,10 +1245,11 @@ async function loadCompletedJobs(fromDashboard = false, monthFilter = null) {
                    <span class="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-mono">#${job.ticketId}</span>
                 </div>
                 <div class="flex flex-col items-end gap-1">
-                    <div class="bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-md shadow-sm flex items-center gap-1">
+                    <div class="bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-md shadow-sm flex items-center justify-center gap-1 w-full relative z-10">
                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                        สำเร็จ
                     </div>
+                    ${assessmentBadge}
                 </div>
             </div>
             
@@ -1298,7 +1373,7 @@ async function loadTechnicianDetail(name) {
     showJobListPage(
         `ประวัติงาน: ${name}`,
         '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>',
-        '<div class="text-center py-8 text-gray-500">กำลังโหลดประวัติงาน...</div>'
+        ''
     );
 
     const container = document.getElementById('jobListContainer');
@@ -1328,7 +1403,48 @@ async function loadTechnicianDetail(name) {
     </div>
     <div id="techJobResults" class="text-center py-8 text-gray-500">กำลังโหลดประวัติงาน...</div>
     `;
-    container.innerHTML = controlsHTML;
+    // KPI Section for Technician
+    let kpiHTML = `
+    <div class="mb-6 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+        <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-4">
+            <h3 class="font-bold text-gray-800 text-lg flex items-center gap-2">
+                <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                ประสิทธิภาพการทำงาน (KPI รายบุคคล)
+            </h3>
+            <select id="techKpiMonthFilter" onchange="fetchTechnicianJobs()" class="bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs rounded-xl px-3 py-1.5 outline-none focus:ring-4 focus:ring-indigo-100 transition-all cursor-pointer font-bold">
+                <option value="">ภาพรวมทั้งปี</option>
+                <option value="01">มกราคม</option>
+                <option value="02">กุมภาพันธ์</option>
+                <option value="03">มีนาคม</option>
+                <option value="04">เมษายน</option>
+                <option value="05">พฤษภาคม</option>
+                <option value="06">มิถุนายน</option>
+                <option value="07">กรกฎาคม</option>
+                <option value="08">สิงหาคม</option>
+                <option value="09">กันยายน</option>
+                <option value="10">ตุลาคม</option>
+                <option value="11">พฤศจิกายน</option>
+                <option value="12">ธันวาคม</option>
+            </select>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-gray-50/50 rounded-xl p-4 border border-gray-50">
+                <h4 class="text-xs font-bold text-gray-500 mb-4 text-center">เวลาซ่อมเฉลี่ย (นาที)</h4>
+                <div class="h-48 relative">
+                    <canvas id="kpiDurationChartTech"></canvas>
+                </div>
+            </div>
+            <div class="bg-gray-50/50 rounded-xl p-4 border border-gray-50">
+                <h4 class="text-xs font-bold text-gray-500 mb-4 text-center">คะแนน KPI <span id="techKpiAverageDisplay">(เต็ม 5.0)</span></h4>
+                <div id="kpiScoreTableContainerTech" class="overflow-x-auto">
+                    <div class="text-center text-gray-400 py-10 italic">กำลังโหลดข้อมูล...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    `;
+
+    container.innerHTML = controlsHTML + kpiHTML + `\n<div id="techJobResults"></div>`;
 
     await fetchTechnicianJobs();
 }
@@ -1368,8 +1484,24 @@ async function fetchTechnicianJobs() {
     }
 
     const res = await apiCall('getTechnicianJobs', args, 'GET');
-    container.classList.remove('opacity-50');
 
+    const kpiMonth = document.getElementById('techKpiMonthFilter')?.value;
+    const kpiParams = {
+        technician: currentTechName,
+        year: new Date().getFullYear()
+    };
+    if (kpiMonth) {
+        kpiParams.month = `${kpiParams.year}-${kpiMonth}`;
+    }
+
+    // Also fetch KPI for this tech
+    const kpiRes = await apiCall('getDashboardStats', kpiParams, 'GET');
+
+    if (kpiRes.success && kpiRes.kpiStats) {
+        renderKPIDashboard(kpiRes.kpiStats, 'Tech');
+    }
+
+    container.classList.remove('opacity-50');
     renderTechnicianJobsTable(res);
 }
 
@@ -1634,6 +1766,7 @@ async function printReport(type, techName = '', start = '', end = '') {
                 <td style="padding: 8px;"><div style="font-weight:bold">${job.deviceName || '-'}</div><div style="font-size:10px; color:#555">${job.assetCode || ''}</div></td>
                 <td style="padding: 8px;">${job.repairLocation || job.division || '-'}</td>
                 <td style="padding: 8px;">${job.issue}</td>
+                <td style="padding: 8px; text-align:center;">${job.workingTime || '-'}</td>
                 <td style="padding: 8px; text-align:center;">
                     ${(job.status.includes('สำเร็จ') || job.status == 'Completed') ? '<span style="color:green">✓ สำเร็จ</span>' : job.status}
                 </td>
@@ -1674,6 +1807,7 @@ async function printReport(type, techName = '', start = '', end = '') {
                                 <th>อุปกรณ์</th>
                                 <th>สถานที่</th>
                                 <th>อาการเสีย</th>
+                                <th style="text-align: center;">ระยะเวลา (นาที)</th>
                                 <th style="text-align: center;">สถานะ</th>
                             </tr>
                         </thead>
@@ -1763,6 +1897,16 @@ function viewJobDetail(index) {
             resultSection.classList.remove('hidden');
             document.getElementById('detTechName').innerText = job.technician || '-';
             document.getElementById('detFinishTime').innerText = job.finished_at || '-';
+
+            const workingTimeRow = document.getElementById('detWorkingTimeRow');
+            const workingTimeEl = document.getElementById('detWorkingTime');
+            if (job.workingTime) {
+                workingTimeEl.innerText = job.workingTime;
+                workingTimeRow.classList.remove('hidden');
+            } else {
+                workingTimeRow.classList.add('hidden');
+            }
+
             document.getElementById('detNotes').innerText = (job.notes === 'ปิดงานทั้งหมด (Bulk)') ? '' : (job.notes || 'ไม่มีหมายเหตุ');
         }
 
@@ -1880,6 +2024,7 @@ async function saveEditJob() {
     if (res.success) {
         showModal('สำเร็จ', 'บันทึกข้อมูลเรียบร้อยแล้ว', 'success', () => {
             closeEditJobModal();
+            loadDepartments(); // Refresh departments/locations list
             // Update local object in currentAdminJobs
             const jobIdx = currentAdminJobs.findIndex(j => j.ticketId === ticketId);
             if (jobIdx >= 0) {
@@ -1902,9 +2047,18 @@ async function saveEditJob() {
 }
 
 async function completeJob(ticketId) {
+    const job = currentAdminJobs.find(j => j.ticketId === ticketId);
+
     // Show the custom modal instead of confirm
     document.getElementById('completeJobTicketId').textContent = ticketId;
     document.getElementById('completeJobNotes').value = '';
+
+    // Auto-select category based on job data
+    if (job && job.category) {
+        const catSelect = document.getElementById('completeJobCategory');
+        if (catSelect) catSelect.value = job.category;
+    }
+
     document.getElementById('completeJobModal').classList.remove('hidden');
 
     // Store ticketId globally for confirmCompleteJob to use
@@ -2210,6 +2364,7 @@ function setCurrentDate() {
 let monthlyChartInstance = null;
 let problemChartInstance = null;
 let deptChartInstance = null;
+let kpiDurationChartInstance = null;
 
 async function renderMonthlyChart() {
     // This function now orchestrates all charts
@@ -2498,6 +2653,32 @@ function renderAssessmentChart(data) {
             }]
         },
         options: {
+            onClick: (e, elements, chart) => {
+                if (elements.length > 0) {
+                    const firstEl = elements[0];
+                    const label = chart.data.labels[firstEl.index];
+                    
+                    let assessmentFilter = null;
+                    if (label === 'ยังไม่ประเมิน') {
+                        assessmentFilter = 'not_assessed';
+                    } else if (label !== 'รวม') {
+                        assessmentFilter = label;
+                    }
+                    
+                    if (assessmentFilter) {
+                        const dropdown = document.getElementById('assessmentMonthFilter');
+                        const val = dropdown ? dropdown.value : "";
+                        let targetMonth = null;
+                        if (val) {
+                            targetMonth = `${dashboardYearFilter}-${val.padStart(2, '0')}`;
+                        }
+                        loadCompletedJobs(true, targetMonth, assessmentFilter);
+                    }
+                }
+            },
+            onHover: (event, chartElement) => {
+                event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
+            },
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
@@ -2705,7 +2886,7 @@ async function searchHistory() {
     }
 
     const tableBody = document.getElementById('historyTableBody');
-    tableBody.innerHTML = '<tr><td colspan="5" class="text-center py-6 text-gray-500"><div class="flex justify-center items-center gap-2"><div class="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>กำลังค้นหาข้อมูล...</div></td></tr>';
+    tableBody.innerHTML = '<tr><td colspan="5" class="text-center py-6 text-gray-500">กำลังค้นหาข้อมูล...</td></tr>';
 
     document.getElementById('historyResultArea').classList.remove('hidden');
 
@@ -2951,7 +3132,15 @@ async function printDeliveryReport(techName = null, startDateStr = null, endDate
 
         const monthYearStr = formatMonthYear(startDate);
         const endDateFullStr = formatFullDate(endDate);
-        const contractorName = techName || "นายนวพล พรเจริญ";
+        let loggedInName = "นายนวพล พรเจริญ";
+        try {
+            const userStr = localStorage.getItem('itSupportUser');
+            if (userStr) {
+                const userObj = JSON.parse(userStr);
+                loggedInName = userObj.fullName || userObj.username || loggedInName;
+            }
+        } catch (e) {}
+        const contractorName = techName || loggedInName;
 
         // --- Categorization Logic for "TOR Summary" ---
         let hwCount = 0, swCount = 0, netCount = 0, otherCount = 0;
@@ -3266,14 +3455,43 @@ function initializeDeliveryForm(jobs, startStr, endStr, techName) {
 
     // Specific period logic: If 1st month of contract? Let's leave blank for user input usually.
 
-    if (techName) document.getElementById('delContractor').value = techName;
+    let loggedInName = "นายนวพล พรเจริญ";
+    try {
+        const userStr = localStorage.getItem('itSupportUser');
+        if (userStr) {
+            const userObj = JSON.parse(userStr);
+            loggedInName = userObj.fullName || userObj.username || loggedInName;
+        }
+    } catch (e) {}
+
+    document.getElementById('delContractor').value = techName || loggedInName;
+    
+    const accountNameEl = document.getElementById('delAccountName');
+    if (accountNameEl) accountNameEl.value = techName || loggedInName;
 
     // Sign Date (End Date)
     const formatThaiDate = (d) => d.toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' });
     document.getElementById('delSignDate').value = formatThaiDate(endDate);
 
     // Sign Name
-    document.getElementById('delSignName').value = techName || "นายนวพล พรเจริญ";
+    document.getElementById('delSignName').value = techName || loggedInName;
+
+    // Load Globally Saved Contract Info for this user
+    try {
+        const savedContractStr = localStorage.getItem(`contract_info_${techName || loggedInName}`);
+        if (savedContractStr) {
+            const sc = JSON.parse(savedContractStr);
+            const setIfObj = (id, val) => { if (val) { const el = document.getElementById(id); if (el) el.value = val; } };
+            setIfObj('delProject', sc.project);
+            setIfObj('delContractNo', sc.contractNo);
+            setIfObj('delContractDate', sc.contractDate);
+            setIfObj('delAmount', sc.amount);
+            setIfObj('delAmountText', sc.amountText);
+            setIfObj('delBankName', sc.bankName);
+            setIfObj('delAccountName', sc.accName);
+            setIfObj('delAccountNo', sc.accNo);
+        }
+    } catch(e) {}
 
     // 2. Generate Daily Table
     const tableBody = document.getElementById('delDailyTableBody');
@@ -3320,9 +3538,7 @@ function initializeDeliveryForm(jobs, startStr, endStr, techName) {
         let remarks = "";
         let bgColorClass = (isHoliday) ? (dayOfWeek === 0 || dayOfWeek === 6 ? "bg-red-50" : "bg-yellow-50") : "bg-white";
 
-        if (isHoliday) {
-            detailText = holidayName || "วันหยุด";
-        } else if (dailyJobs.length > 0) {
+        if (dailyJobs.length > 0) {
             let lines = [];
             // Remarks: Link then IDs
             let remLines = [`http://10.67.3.111/fixed/`, `Ticket ID`];
@@ -3348,6 +3564,8 @@ function initializeDeliveryForm(jobs, startStr, endStr, techName) {
             detailText = lines.join('\n');
             qty = dailyJobs.length;
             remarks = remLines.join('\n');
+        } else if (isHoliday) {
+            detailText = holidayName || "วันหยุด";
         } else {
             detailText = "-";
         }
@@ -3492,8 +3710,33 @@ function loadDeliveryFormData(data) {
 function saveDeliveryDraft() {
     const data = getDeliveryFormData();
     const { techName, start, end } = currentDeliveryContext;
-    const draftKey = `draft_delivery_${start}_${end}_${techName || 'all'}`;
+    
+    let loggedInName = "all";
+    try {
+        const userStr = localStorage.getItem('itSupportUser');
+        if (userStr) {
+            const userObj = JSON.parse(userStr);
+            loggedInName = userObj.fullName || userObj.username || "all";
+        }
+    } catch (e) {}
+
+    const draftKey = `draft_delivery_${start}_${end}_${techName || loggedInName}`;
     localStorage.setItem(draftKey, JSON.stringify(data));
+
+    // Also save contract fields globally for the current user so they persist across months
+    try {
+        const contractData = {
+            project: data.project,
+            contractNo: data.contractNo,
+            contractDate: data.contractDate,
+            amount: data.amount,
+            amountText: data.amountText,
+            bankName: data.bankName,
+            accName: data.accName,
+            accNo: data.accNo
+        };
+        localStorage.setItem(`contract_info_${techName || loggedInName}`, JSON.stringify(contractData));
+    } catch (e) {}
     showModal('บันทึกแล้ว', 'บันทึกแบบร่างเรียบร้อยแล้ว', 'success');
 }
 
@@ -3699,7 +3942,16 @@ window.loadDeliveryManualDraft = function () {
         return;
     }
 
-    const draftKey = `draft_delivery_${start}_${end}_${techName || 'all'}`;
+    let loggedInName = "all";
+    try {
+        const userStr = localStorage.getItem('itSupportUser');
+        if (userStr) {
+            const userObj = JSON.parse(userStr);
+            loggedInName = userObj.fullName || userObj.username || "all";
+        }
+    } catch (e) {}
+
+    const draftKey = `draft_delivery_${start}_${end}_${techName || loggedInName}`;
     const draft = localStorage.getItem(draftKey);
 
     if (draft) {
@@ -3737,14 +3989,43 @@ function initializeDeliveryFormV2(jobs, startStr, endStr, techName) {
         document.getElementById('delPeriod').value = "";
     }
 
-    if (techName) document.getElementById('delContractor').value = techName;
+    let loggedInName = "นายนวพล พรเจริญ";
+    try {
+        const userStr = localStorage.getItem('itSupportUser');
+        if (userStr) {
+            const userObj = JSON.parse(userStr);
+            loggedInName = userObj.fullName || userObj.username || loggedInName;
+        }
+    } catch (e) {}
+
+    document.getElementById('delContractor').value = techName || loggedInName;
+    
+    const accountNameEl = document.getElementById('delAccountName');
+    if (accountNameEl) accountNameEl.value = techName || loggedInName;
 
     // Sign Date (End Date)
     const formatThaiDate = (d) => d.toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' });
     document.getElementById('delSignDate').value = formatThaiDate(endDate);
 
     // Sign Name
-    document.getElementById('delSignName').value = techName || "นายนวพล พรเจริญ";
+    document.getElementById('delSignName').value = techName || loggedInName;
+
+    // Load Globally Saved Contract Info for this user
+    try {
+        const savedContractStr = localStorage.getItem(`contract_info_${techName || loggedInName}`);
+        if (savedContractStr) {
+            const sc = JSON.parse(savedContractStr);
+            const setIfObj = (id, val) => { if (val) { const el = document.getElementById(id); if (el) el.value = val; } };
+            setIfObj('delProject', sc.project);
+            setIfObj('delContractNo', sc.contractNo);
+            setIfObj('delContractDate', sc.contractDate);
+            setIfObj('delAmount', sc.amount);
+            setIfObj('delAmountText', sc.amountText);
+            setIfObj('delBankName', sc.bankName);
+            setIfObj('delAccountName', sc.accName);
+            setIfObj('delAccountNo', sc.accNo);
+        }
+    } catch(e) {}
 
     // 2. Generate Daily Table
     const tableBody = document.getElementById('delDailyTableBody');
@@ -3877,9 +4158,7 @@ function initializeDeliveryFormV2(jobs, startStr, endStr, techName) {
         let remarks = "";
         let bgColorClass = (isHoliday) ? (dayOfWeek === 0 || dayOfWeek === 6 ? "bg-red-50" : "bg-yellow-50") : "bg-white";
 
-        if (isHoliday) {
-            detailText = holidayName || "วันหยุด";
-        } else if (dailyJobs.length > 0) {
+        if (dailyJobs.length > 0) {
             let lines = [];
             let remLines = [`http://10.67.3.111/fixed/`, `Ticket ID`];
 
@@ -3916,6 +4195,8 @@ function initializeDeliveryFormV2(jobs, startStr, endStr, techName) {
             detailText = lines.join('\n');
             qty = dailyJobs.length;
             remarks = remLines.join('\n');
+        } else if (isHoliday) {
+            detailText = holidayName || "วันหยุด";
         } else {
             detailText = "-";
         }
@@ -4126,6 +4407,152 @@ async function submitAssessment() {
     btn.disabled = false;
 }
 
+// --- KPI Dashboard Rendering ---
+function renderKPIDashboard(stats, suffix = '') {
+    const ctx = document.getElementById('kpiDurationChart' + suffix);
+    if (!ctx) return;
+
+    // Use a dynamic property to store chart instance based on suffix
+    const chartKey = 'kpiDurationChartInstance' + suffix;
+    if (window[chartKey]) window[chartKey].destroy();
+
+    if (!stats || stats.length === 0) {
+        const container = document.getElementById('kpiScoreTableContainer' + suffix);
+        if (container) container.innerHTML = '<div class="text-center text-gray-400 py-4 italic">ไม่พบข้อมูล KPI ในช่วงเวลานี้</div>';
+        return;
+    }
+
+    const labelsMap = {
+        'hw': 'Hardware',
+        'sw': 'Software',
+        'net': 'Network',
+        'other': 'อื่นๆ (Others)'
+    };
+
+    const getLabel = (cat) => labelsMap[cat] || cat || 'อื่นๆ';
+
+    const labels = stats.map(s => getLabel(s.category));
+    const avgTimes = stats.map(s => parseFloat(s.avgTime).toFixed(1));
+    const avgScores = stats.map(s => parseFloat(s.avgScore).toFixed(2));
+
+    // 1. Render Bar Chart
+    window[chartKey] = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'เวลาเฉลี่ย (นาที)',
+                data: avgTimes,
+                backgroundColor: [
+                    'rgba(245, 158, 11, 0.7)', // hw
+                    'rgba(16, 185, 129, 0.7)', // sw
+                    'rgba(59, 130, 246, 0.7)', // net
+                    'rgba(107, 114, 128, 0.7)'  // other
+                ],
+                borderColor: [
+                    'rgba(245, 158, 11, 1)',
+                    'rgba(16, 185, 129, 1)',
+                    'rgba(59, 130, 246, 1)',
+                    'rgba(107, 114, 128, 1)'
+                ],
+                borderWidth: 1,
+                borderRadius: 8,
+                barThickness: 40
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            return ` เวลาเฉลี่ย: ${context.raw} นาที`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: { display: true, text: 'นาที' }
+                }
+            }
+        }
+    });
+
+    // 2. Render Score Table
+    let tableHtml = `
+    <table class="w-full text-sm">
+        <thead class="text-gray-500 border-b border-gray-100">
+            <tr>
+                <th class="py-2 text-left">หมวดหมู่</th>
+                <th class="py-2 text-center">จำนวนงาน</th>
+                <th class="py-2 text-center">เวลาเฉลี่ย</th>
+                <th class="py-2 text-right">คะแนนเฉลี่ย</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">`;
+
+    stats.forEach((s, i) => {
+        const score = parseFloat(s.avgScore);
+        const flooredScore = Math.floor(score); // Cut decimals as requested
+        let scoreClass = 'text-green-600';
+        if (flooredScore < 5) scoreClass = 'text-orange-600';
+        if (flooredScore < 4) scoreClass = 'text-red-600';
+
+        tableHtml += `
+            <tr class="hover:bg-white transition">
+                <td class="py-3 font-bold text-gray-700">${getLabel(s.category)}</td>
+                <td class="py-3 text-center">${s.count}</td>
+                <td class="py-3 text-center">${parseFloat(s.avgTime).toFixed(1)} <span class="text-[10px] text-gray-400">นาที</span></td>
+                <td class="py-3 text-right font-bold ${scoreClass}">${flooredScore}</td>
+            </tr>`;
+    });
+
+    // Calculate overall average
+    const totalScoreSum = stats.reduce((acc, curr) => acc + parseFloat(curr.avgScore), 0);
+    const overallAvg = stats.length > 0 ? Math.floor(totalScoreSum / stats.length) : 0;
+
+    // Update Header Display
+    const headerId = suffix === 'Tech' ? 'techKpiAverageDisplay' : 'kpiAverageDisplay';
+    const headerElem = document.getElementById(headerId);
+    if (headerElem) {
+        headerElem.innerText = `เฉลี่ย ${overallAvg}.0`;
+    }
+
+    tableHtml += `
+        </tbody>
+        <tfoot class="border-t border-gray-100">
+            <tr>
+               <td colspan="4" class="py-2 text-[10px] text-gray-400 italic">
+                 * เกณฑ์คะแนน: เต็ม 5 หากอยู่ในเวลาที่กำหนด (HW:60, SW:15, NET:30) เกินเวลาเหลือ 4
+               </td>
+            </tr>
+        </tfoot>
+    </table>`;
+
+    document.getElementById('kpiScoreTableContainer' + suffix).innerHTML = tableHtml;
+}
+
+async function loadKpiStats() {
+    const month = document.getElementById('kpiMonthFilter').value;
+    const params = { year: dashboardYearFilter };
+    if (month) {
+        params.month = `${dashboardYearFilter}-${month}`;
+    }
+
+    // Use a loading state for the table
+    const tableContainer = document.getElementById('kpiScoreTableContainer');
+    if (tableContainer) tableContainer.innerHTML = '<div class="text-center text-gray-400 py-10 italic">กำลังโหลดข้อมูล...</div>';
+
+    const res = await apiCall('getDashboardStats', params, 'GET');
+    if (res.success && res.kpiStats) {
+        renderKPIDashboard(res.kpiStats);
+    }
+}
+
 async function loadAssessors() {
     const res = await apiCall('getAssessors', {}, 'GET');
     const select = document.getElementById('asmAssessor');
@@ -4160,5 +4587,6 @@ window.closeAssessmentModal = closeAssessmentModal;
 window.submitAssessment = submitAssessment;
 window.loadAssessors = loadAssessors;
 window.addNewAssessor = addNewAssessor;
+window.loadKpiStats = loadKpiStats;
 window.changeUserJobMonth = changeUserJobMonth;
 window.changeUserJobYear = changeUserJobYear;

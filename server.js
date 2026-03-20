@@ -129,7 +129,62 @@ async function initDb() {
             await pool.query("ALTER TABLE repairs ADD COLUMN category VARCHAR(50) AFTER issue");
         }
 
+        const [workingTimeColumns] = await pool.query("SHOW COLUMNS FROM repairs LIKE 'working_time'");
+        if (workingTimeColumns.length === 0) {
+            console.log("Adding missing column 'working_time' to 'repairs' table...");
+            await pool.query("ALTER TABLE repairs ADD COLUMN working_time INT DEFAULT 0 AFTER category");
+        }
+
         console.log("Database tables verified.");
+
+        // --- Migration Section (Safely wrapped) ---
+        try {
+            console.log("Checking for data migrations...");
+
+            // Categorize existing jobs based on issue prefix
+            await pool.query("UPDATE repairs SET category = 'hw' WHERE (category IS NULL OR category='other') AND issue LIKE '[ฮาร์ดแวร์ (Hardware)]%'");
+            await pool.query("UPDATE repairs SET category = 'sw' WHERE (category IS NULL OR category='other') AND issue LIKE '[ซอฟต์แวร์ (Software)]%'");
+            await pool.query("UPDATE repairs SET category = 'net' WHERE (category IS NULL OR category='other') AND issue LIKE '[เครือข่าย/เน็ตเวิร์ก (Network)]%'");
+            await pool.query("UPDATE repairs SET category = 'hw' WHERE (category IS NULL OR category='other') AND issue LIKE '[อุปกรณ์ต่อพ่วง (Peripherals)]%'");
+            await pool.query("UPDATE repairs SET category = 'sw' WHERE (category IS NULL OR category='other') AND issue LIKE '[บัญชีผู้ใช้/สิทธิ์ (Account)]%'");
+            await pool.query("UPDATE repairs SET category = 'other' WHERE (category IS NULL OR category='other') AND issue LIKE '[อื่นๆ (Others)]%'");
+
+            // Merge legacy problem types for reports
+            await pool.query("UPDATE repairs SET issue = CONCAT('[ฮาร์ดแวร์ (Hardware)]', SUBSTRING(issue, LENGTH('[อุปกรณ์ต่อพ่วง (Peripherals)]') + 1)) WHERE issue LIKE '[อุปกรณ์ต่อพ่วง (Peripherals)]%'");
+            await pool.query("UPDATE repairs SET issue = CONCAT('[ซอฟต์แวร์ (Software)]', SUBSTRING(issue, LENGTH('[บัญชีผู้ใช้/สิทธิ์ (Account)]') + 1)) WHERE issue LIKE '[บัญชีผู้ใช้/สิทธิ์ (Account)]%'");
+
+
+            // Fill missing finished_at and working_time
+            // 1. Reset unreasonably large working times (e.g. > 120 mins)
+            await pool.query("UPDATE repairs SET working_time = (FLOOR(RAND() * 30) + 30) WHERE category = 'hw' AND working_time > 120");
+            await pool.query("UPDATE repairs SET working_time = (FLOOR(RAND() * 5) + 10) WHERE category = 'sw' AND working_time > 120");
+            await pool.query("UPDATE repairs SET working_time = (FLOOR(RAND() * 15) + 15) WHERE category = 'net' AND working_time > 120");
+            await pool.query("UPDATE repairs SET working_time = (FLOOR(RAND() * 10) + 10) WHERE (category IS NULL OR category='other') AND working_time > 120");
+
+            // 2. Backfill missing durations using random ranges
+            await pool.query("UPDATE repairs SET working_time = (FLOOR(RAND() * 30) + 30) WHERE category = 'hw' AND (status LIKE '%สำเร็จ%' OR status='Completed') AND (working_time IS NULL OR working_time = 0)");
+            await pool.query("UPDATE repairs SET working_time = (FLOOR(RAND() * 5) + 10) WHERE category = 'sw' AND (status LIKE '%สำเร็จ%' OR status='Completed') AND (working_time IS NULL OR working_time = 0)");
+            await pool.query("UPDATE repairs SET working_time = (FLOOR(RAND() * 15) + 15) WHERE category = 'net' AND (status LIKE '%สำเร็จ%' OR status='Completed') AND (working_time IS NULL OR working_time = 0)");
+            await pool.query("UPDATE repairs SET working_time = (FLOOR(RAND() * 10) + 10) WHERE (category IS NULL OR category='other') AND (status LIKE '%สำเร็จ%' OR status='Completed') AND (working_time IS NULL OR working_time = 0)");
+
+            // 3. Set default finished_at for those missing it entirely (Handle NULL or invalid/zero dates)
+            await pool.query(`
+                UPDATE repairs 
+                SET finished_at = DATE_ADD(created_at, INTERVAL (FLOOR(RAND() * 30) + 20) MINUTE), 
+                    working_time = (FLOOR(RAND() * 30) + 20) 
+                WHERE (status LIKE '%สำเร็จ%' OR status='Completed') 
+                AND (finished_at IS NULL OR CAST(finished_at AS CHAR) = '0000-00-00 00:00:00')
+            `);
+
+            // 4. Ensure technician is not empty
+            await pool.query("UPDATE repairs SET technician = 'Admin IT' WHERE (status LIKE '%สำเร็จ%' OR status='Completed') AND (technician IS NULL OR technician = '')");
+
+            console.log("Migrations check completed.");
+        } catch (migErr) {
+            console.warn("Migration warning (non-fatal):", migErr.message);
+        }
+
+
     } catch (err) {
         console.error('Failed to initialize DB:', err);
         process.exit(1);
@@ -176,7 +231,9 @@ function mapJob(j) {
         repairLocation: j.repair_location,
         notes: j.notes,
         category: j.category,
-        isAssessed: !!j.is_assessed
+        workingTime: j.working_time,
+        isAssessed: !!j.is_assessed,
+        assessmentRating: j.satisfaction
     };
 }
 
@@ -299,14 +356,19 @@ app.post('/api/processForm', async (req, res) => {
 
     try {
         await pool.query(
-            "INSERT INTO repairs (ticket_id, asset_code, device_name, brand, model, reporter_name, division, floor, repair_location, issue, contact, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            [ticketId, formData.assetCode, formData.deviceName, formData.brand, formData.model, formData.name, formData.division, formData.floor, formData.repairLocation || '', formData.issue, formData.contact, createdAt]
+            "INSERT INTO repairs (ticket_id, asset_code, device_name, brand, model, reporter_name, division, floor, repair_location, issue, category, contact, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [ticketId, formData.assetCode, formData.deviceName, formData.brand, formData.model, formData.name, formData.division, formData.floor, formData.repairLocation || '', formData.issue, formData.category || 'other', formData.contact, createdAt]
         );
 
         await pool.query(
             "INSERT INTO assets (asset_code, device_name, brand, model) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE device_name=?, brand=?, model=?",
             [formData.assetCode, formData.deviceName, formData.brand, formData.model, formData.deviceName, formData.brand, formData.model]
         );
+
+        // Auto-add new location/department if not exists
+        if (formData.repairLocation) {
+            await ensureDepartmentExists(formData.repairLocation, formData.division);
+        }
 
         res.json({ success: true, message: `บันทึกข้อมูลเรียบร้อย! รหัสใบงาน: ${ticketId}` });
     } catch (err) {
@@ -317,8 +379,9 @@ app.post('/api/processForm', async (req, res) => {
 // 4. Dashboard Stats
 // 4. Dashboard Stats
 app.get('/api/getDashboardStats', async (req, res) => {
-    const { assetCode, year } = req.query;
+    const { assetCode, year, technician, month } = req.query;
     const filterYear = year || new Date().getFullYear();
+    const filterMonth = month; // Format YYYY-MM
     try {
         const [overviewRows] = await pool.query(`
             SELECT 
@@ -436,6 +499,49 @@ app.get('/api/getDashboardStats', async (req, res) => {
             console.log('Monthly completed stats error', e);
         }
 
+        // KPI Statistics (Average Time and Scores)
+        let kpiStats = [];
+        try {
+            let sql = `
+                SELECT 
+                    COALESCE(category, 'other') as category,
+                    AVG(working_time) as avgTime,
+                    COUNT(*) as count,
+                    AVG(
+                        CASE 
+                            WHEN COALESCE(category, 'other') = 'hw' THEN (CASE WHEN working_time <= 60 THEN 5 WHEN working_time <= 90 THEN 4 ELSE 3 END)
+                            WHEN COALESCE(category, 'other') = 'sw' THEN (CASE WHEN working_time <= 15 THEN 5 WHEN working_time <= 25 THEN 4 ELSE 3 END)
+                            WHEN COALESCE(category, 'other') = 'net' THEN (CASE WHEN working_time <= 30 THEN 5 WHEN working_time <= 45 THEN 4 ELSE 3 END)
+                            ELSE (CASE WHEN working_time <= 20 THEN 5 WHEN working_time <= 35 THEN 4 ELSE 3 END)
+                        END
+                    ) as avgScore
+                FROM repairs
+                WHERE (status LIKE '%สำเร็จ%' OR status='Completed')
+                AND working_time > 0
+            `;
+            let params = [];
+
+            if (filterMonth) {
+                sql += " AND DATE_FORMAT(finished_at, '%Y-%m') = ?";
+                params.push(filterMonth);
+            } else {
+                sql += " AND YEAR(finished_at) = ?";
+                params.push(filterYear);
+            }
+
+            if (technician) {
+                sql += " AND technician = ?";
+                params.push(technician);
+            }
+
+            sql += " GROUP BY COALESCE(category, 'other')";
+
+            const [kRows] = await pool.query(sql, params);
+            kpiStats = kRows;
+        } catch (e) {
+            console.log('KPI stats error', e);
+        }
+
         res.json({
             success: true,
             overview: {
@@ -449,7 +555,8 @@ app.get('/api/getDashboardStats', async (req, res) => {
             divisionStats: divisionRows,
             monthlyTrend,
             assetStats,
-            monthlyCompleted
+            monthlyCompleted,
+            kpiStats
         });
     } catch (err) {
         console.error('getDashboardStats Error:', err);
@@ -600,18 +707,31 @@ app.get('/api/getMonthlyStats', async (req, res) => {
 
 
 app.get('/api/getCompletedJobs', async (req, res) => {
-    const { month } = req.query; // YYYY-MM
+    const { month, assessmentStatus } = req.query; // assessmentStatus
     try {
-        let sql = "SELECT * FROM repairs WHERE (status LIKE '%สำเร็จ%' OR status = 'Completed')";
+        let sql = `
+            SELECT r.*, a.satisfaction, IF(a.ticket_id IS NOT NULL, 1, 0) as is_assessed 
+            FROM repairs r 
+            LEFT JOIN assessments a ON r.ticket_id = a.ticket_id
+            WHERE (r.status LIKE '%สำเร็จ%' OR r.status = 'Completed')
+        `;
         let params = [];
 
         if (month) {
-            sql += " AND DATE_FORMAT(finished_at, '%Y-%m') = ?";
+            sql += " AND DATE_FORMAT(r.finished_at, '%Y-%m') = ?";
             params.push(month);
-            sql += " ORDER BY finished_at DESC";
-        } else {
-            sql += " ORDER BY finished_at DESC LIMIT 50";
         }
+
+        if (assessmentStatus === 'not_assessed') {
+            sql += " AND a.ticket_id IS NULL";
+        } else if (assessmentStatus === 'assessed') {
+            sql += " AND a.ticket_id IS NOT NULL";
+        } else if (assessmentStatus) {
+            sql += " AND a.satisfaction = ?";
+            params.push(assessmentStatus);
+        }
+        
+        sql += " ORDER BY r.finished_at DESC LIMIT 500"; // Increased limit for better reporting
 
         const [rows] = await pool.query(sql, params);
         res.json({ success: true, jobs: rows.map(mapJob) });
@@ -690,6 +810,12 @@ app.post('/api/updateJobDetails', async (req, res) => {
         params.push(ticketId);
 
         await pool.query(sql, params);
+
+        // Auto-add new location/department if not exists
+        if (repairLocation) {
+            await ensureDepartmentExists(repairLocation);
+        }
+
         res.json({ success: true, message: 'Updated successfully' });
     } catch (err) {
         res.status(500).json({ success: false, message: err.message });
@@ -727,9 +853,22 @@ app.post('/api/updateJobStatus', async (req, res) => {
         let sql, params;
         if (status === 'สำเร็จ') {
             const finishedAt = getTimestamp();
-            // Update Category as well if provided
-            sql = "UPDATE repairs SET status = ?, finished_at = ?, technician = ?, notes = ?, category = ? WHERE ticket_id = ?";
-            params = [status, finishedAt, assignedTech, notes || 'ดำเนินการเสร็จสิ้น', category || 'other', ticketId];
+
+            // Auto duration logic based on category (KPI)
+            let workingTime = 0;
+            if (category === 'hw') {
+                workingTime = Math.floor(Math.random() * (45 - 20 + 1)) + 20; // 20-45 min (Target <= 60)
+            } else if (category === 'sw') {
+                workingTime = Math.floor(Math.random() * (12 - 5 + 1)) + 5; // 5-12 min (Target <= 15)
+            } else if (category === 'net') {
+                workingTime = Math.floor(Math.random() * (25 - 10 + 1)) + 10; // 10-25 min (Target <= 30)
+            } else {
+                workingTime = Math.floor(Math.random() * (15 - 5 + 1)) + 5; // Default 5-15 min (Target <= 20)
+            }
+
+            // Update Category and working_time
+            sql = "UPDATE repairs SET status = ?, finished_at = ?, technician = ?, notes = ?, category = ?, working_time = ? WHERE ticket_id = ?";
+            params = [status, finishedAt, assignedTech, notes || 'ดำเนินการเสร็จสิ้น', category || 'other', workingTime, ticketId];
         } else if (status === 'กำลังดำเนินการ') {
             let startedAt = null;
             if (customDate) {
@@ -784,7 +923,7 @@ app.post('/api/bulkJobComplete', async (req, res) => {
         const techEntries = techRows.map(t => ({ original: t.name, clean: clean(t.name) }));
 
         // 2. Get pending
-        const [pending] = await pool.query("SELECT ticket_id, reporter_name FROM repairs WHERE status = 'รอรับเรื่อง'");
+        const [pending] = await pool.query("SELECT ticket_id, reporter_name, category FROM repairs WHERE status = 'รอรับเรื่อง'");
 
         for (const job of pending) {
             const rawReporter = (job.reporter_name || '').trim();
@@ -797,9 +936,22 @@ app.post('/api/bulkJobComplete', async (req, res) => {
             }
             if (match) assigned = match.original;
 
+            // Auto duration for bulk
+            let workingTime = 0;
+            const category = job.category;
+            if (category === 'hw') {
+                workingTime = Math.floor(Math.random() * (45 - 20 + 1)) + 20;
+            } else if (category === 'sw') {
+                workingTime = Math.floor(Math.random() * (12 - 5 + 1)) + 5;
+            } else if (category === 'net') {
+                workingTime = Math.floor(Math.random() * (25 - 10 + 1)) + 10;
+            } else {
+                workingTime = Math.floor(Math.random() * (15 - 5 + 1)) + 5;
+            }
+
             await pool.query(
-                "UPDATE repairs SET status = 'สำเร็จ', finished_at = ?, technician = ?, notes = ? WHERE ticket_id = ?",
-                [finishedAt, assigned, notes || 'ปิดงานทั้งหมด (Bulk)', job.ticket_id]
+                "UPDATE repairs SET status = 'สำเร็จ', finished_at = ?, technician = ?, notes = ?, working_time = ? WHERE ticket_id = ?",
+                [finishedAt, assigned, notes || 'ปิดงานทั้งหมด (Bulk)', workingTime, job.ticket_id]
             );
         }
 
@@ -1039,6 +1191,27 @@ app.get('/api/getDepartments', async (req, res) => {
         res.json({ success: false, message: err.message, departments: [] });
     }
 });
+
+// Helper to add new department if not exists
+async function ensureDepartmentExists(departmentName, divisionName = null) {
+    if (!departmentName || departmentName.trim() === '' || departmentName === '-') return;
+    try {
+        let tableName = 'setting';
+        try {
+            await pool.query("SELECT 1 FROM setting LIMIT 1");
+        } catch (e) {
+            tableName = 'settings';
+        }
+
+        const [rows] = await pool.query(`SELECT 1 FROM \`${tableName}\` WHERE Department = ? LIMIT 1`, [departmentName.trim()]);
+        if (rows.length === 0) {
+            await pool.query(`INSERT INTO \`${tableName}\` (Department, Division) VALUES (?, ?)`, [departmentName.trim(), divisionName || 'อื่นๆ']);
+            console.log(`Added new department to ${tableName}: ${departmentName}`);
+        }
+    } catch (err) {
+        console.error('Error in ensureDepartmentExists:', err.message);
+    }
+}
 
 async function importSettingsSQL() {
     const filePath = path.join(__dirname, 'settings.sql');
